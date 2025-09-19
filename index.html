@@ -495,6 +495,11 @@
           <input type="email" name="email" placeholder="Email" required>
           <input type="text" name="company" placeholder="Компания / Магазин">
           <textarea name="message" placeholder="Опишите задачу или интересующие услуги" rows="5" required></textarea>
+          <!-- Honeypot -->
+  <input type="text" name="website" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;">
+  <input type="hidden" name="tstart" id="tstartField">
+  <input type="hidden" name="ua" id="uaField">
+  <input type="hidden" name="referer" id="refField">
           <div class="inline-note">Отправляя форму, вы соглашаетесь на обработку данных для ответа.</div>
           <button type="submit">Отправить</button>
         </form>
@@ -732,12 +737,41 @@
       URL.revokeObjectURL(a.href);
     }
     function submitForm(e){
+      const form = document.getElementById('contactForm');
+      const tstartField = document.getElementById('tstartField');
+      const uaField = document.getElementById('uaField');
+      const refField = document.getElementById('refField');
+
+      tstartField.value = Date.now();
+      uaField.value = navigator.userAgent;
+      refField.value = document.referrer || location.href;
+      form.addEventListener('submit', async (e)=>{
       e.preventDefault();
-      const form=e.target;
-      const data=Object.fromEntries(new FormData(form).entries());
-      console.log("FORM SUBMIT (simulate):",data);
-      form.reset();
-      showToast("Сообщение отправлено");
+      const fd = new FormData(form);
+      // Клиентская мини-валидация
+      if ((fd.get('message')||'').trim().length < 10){
+        showToast("Сообщение слишком короткое");
+        return;
+      }
+      showToast("Отправка...");
+      try {
+        const res = await fetch("URL_ТВОЕГО_APPS_SCRIPT", {
+          method:'POST',
+          body: fd
+        });
+        const data = await res.json().catch(()=>({ok:false,error:'bad_json'}));
+        if (data.ok){
+          form.reset();
+          showToast("Отправлено ✅");
+          tstartField.value = Date.now(); // обновим точку для следующей отправки
+        } else {
+          showToast("Ошибка: " + (data.error||'сервер'));
+        }
+      } catch(err){
+        console.error(err);
+        showToast("Сеть недоступна");
+      }
+    });
     }
     function openContact(ctx){
       document.querySelector('#contact').scrollIntoView({behavior:'smooth'});
