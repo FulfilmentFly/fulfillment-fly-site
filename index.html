@@ -755,7 +755,7 @@
       }
       showToast("Отправка...");
       try {
-        const res = await fetch("URL_ТВОЕГО_APPS_SCRIPT", {
+        const res = await fetch("https://script.google.com/macros/s/AKfycbyhGvZwiTI8aEtDao1y5OLDkwmp2Yp2KgFHsgYe9r5TffVfOx2SbvLnsV6IXSFTi9Kx/exec", {
           method:'POST',
           body: fd
         });
